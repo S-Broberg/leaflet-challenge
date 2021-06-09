@@ -13,7 +13,7 @@ var myMap = L.map("map", {
   }).addTo(myMap);
 
   
-var queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson";
+var queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson";
 
 
 d3.json(queryUrl, function(data) {
