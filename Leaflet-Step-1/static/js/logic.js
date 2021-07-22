@@ -1,100 +1,120 @@
-var myMap = L.map("map", {
-    center: [37.7749, -122.4194],
-    zoom: 5
-  });
-  
-  
-  
-  L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
-    attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
+console.log("Step 1 working");
+
+var graymap = L.tileLayer(
+  "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}",
+  {
+    attribution:
+      "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
+    tileSize: 512,
     maxZoom: 18,
-    id: "mapbox.streets",
-    accessToken: "pk.eyJ1Ijoic2JybyIsImEiOiJja3BxMDVtN2MwN21lMzBwN3A0ajQ2ZWxqIn0.nkcgiqJdDoo90Ax8Wyb8dw"
-  }).addTo(myMap);
+    zoomOffset: -1,
+    id: "mapbox/light-v10",
+    accessToken: API_KEY
+  }
+);
+
+
+var map = L.map("map", {
+  center: [
+    40.7, -94.5
+  ],
+  zoom: 3
+});
+
+
+graymap.addTo(map);
+
+
+d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson").then(function(data) {
 
   
-var queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson";
-
-
-d3.json(queryUrl, function(data) {
   function styleInfo(feature) {
     return {
       opacity: 1,
       fillOpacity: 1,
-      fillColor: getColor(feature.properties.mag),
+      fillColor: getColor(feature.geometry.coordinates[2]),
       color: "#000000",
       radius: getRadius(feature.properties.mag),
       stroke: true,
       weight: 0.5
     };
   }
+
   
-    function getColor(magnitude) {
+  function getColor(depth) {
     switch (true) {
-    case magnitude > 5:
+    case depth > 90:
       return "#ea2c2c";
-    case magnitude > 4:
+    case depth > 70:
       return "#ea822c";
-    case magnitude > 3:
+    case depth > 50:
       return "#ee9c00";
-    case magnitude > 2:
+    case depth > 30:
       return "#eecc00";
-    case magnitude > 1:
+    case depth > 10:
       return "#d4ee00";
     default:
       return "#98ee00";
     }
   }
+
   
-    function getRadius(magnitude) {
+  function getRadius(magnitude) {
     if (magnitude === 0) {
       return 1;
     }
 
     return magnitude * 4;
   }
+
+  
+  L.geoJson(data, {
     
-    L.geoJson(data, {
-      
-      pointToLayer: function(feature, latlng) {
-        return L.circleMarker(latlng);
-      },
-      
-      style: styleInfo,
-      
-      onEachFeature: function(feature, layer) {
-        layer.bindPopup("Magnitude: " + feature.properties.mag + "<br>Location: " + feature.properties.place);
-      }
-    }).addTo(myMap);
-  
+    pointToLayer: function(feature, latlng) {
+      return L.circleMarker(latlng);
+    },
     
-    var legend = L.control({
-      position: "bottomright"
-    });
-  
+    style: styleInfo,
     
-    legend.onAdd = function() {
-      var div = L.DomUtil.create("div", "info legend");
+    onEachFeature: function(feature, layer) {
+      layer.bindPopup(
+        "Magnitude: "
+          + feature.properties.mag
+          + "<br>Depth: "
+          + feature.geometry.coordinates[2]
+          + "<br>Location: "
+          + feature.properties.place
+      );
+    }
+  }).addTo(map);
+
   
-      var grades = [0, 1, 2, 3, 4, 5];
-      var colors = [
-        "#98ee00",
-        "#d4ee00",
-        "#eecc00",
-        "#ee9c00",
-        "#ea822c",
-        "#ea2c2c"
-      ];
-  
-      
-      for (var i = 0; i < grades.length; i++) {
-        div.innerHTML +=
-          "<i style='background: " + colors[i] + "'></i> " +
-          grades[i] + (grades[i + 1] ? "&ndash;" + grades[i + 1] + "<br>" : "+");
-      }
-      return div;
-    };
-  
-    
-    legend.addTo(myMap);
+  var legend = L.control({
+    position: "bottomright"
   });
+
+  
+  legend.onAdd = function() {
+    var div = L.DomUtil.create("div", "info legend");
+
+    var grades = [-10, 10, 30, 50, 70, 90];
+    var colors = [
+      "#98ee00",
+      "#d4ee00",
+      "#eecc00",
+      "#ee9c00",
+      "#ea822c",
+      "#ea2c2c"
+    ];
+
+    
+    for (var i = 0; i < grades.length; i++) {
+      div.innerHTML += "<i style='background: " + colors[i] + "'></i> "
+      + grades[i] + (grades[i + 1] ? "&ndash;" + grades[i + 1] + "<br>" : "+");
+    }
+    return div;
+  };
+
+  
+  legend.addTo(map);
+});
